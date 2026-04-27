@@ -1,0 +1,8 @@
+id: WideResNet-28-4
+_target_: wide_resnet.WideResNet
+depth: 28
+widen_factor: 4
+dropout_rate: 0.3
+transfer: false
+transform:
+  type: image
