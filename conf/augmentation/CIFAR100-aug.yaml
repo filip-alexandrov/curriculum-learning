@@ -1,0 +1,20 @@
+id: CIFAR100-aug
+_target_: autrainer.augmentations.AugmentationPipeline
+
+generator_seed: 0
+
+pipeline:
+  - autrainer.augmentations.TorchvisionAugmentation:
+      name: RandomHorizontalFlip
+      p: 0.5
+  - autrainer.augmentations.TorchvisionAugmentation:
+      name: RandomCrop
+      size: [32, 32]
+      padding: 4
+  - autrainer.augmentations.TorchvisionAugmentation:
+      name: RandAugment
+      num_ops: 2
+      magnitude: 9
+  - autrainer.augmentations.CutMix:
+      alpha: 1.0
+      p: 0.5

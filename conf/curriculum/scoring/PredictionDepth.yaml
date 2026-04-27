@@ -1,0 +1,15 @@
+id: PredictionDepth
+type: PredictionDepth
+_target_: aucurriculum.curricula.scoring.PredictionDepth
+run_name: CIFAR-10_EfficientNet-B0_Adam_0.001_128_epoch_100_None_None_N_N_None_None_1_0_42
+probe_placements:
+  - model_features_0_1                   # stem BN (unchanged)
+  - model_features_1_0_block_2_1         # stage 1 projection BN (unchanged)
+  - model_features_\d_0_block_3_1        # stride block projection BN, stages 2–7 (unchanged)
+  - model_features_\d_\d+_block_3_1      # NEW: repeated block projection BN (2.1, 4.1, 4.2, 5.1–5.2, 6.1–6.3, 7.0 excluded as it has no repeat)
+  - add(_\d+)?                           # residual additions (unchanged)
+  - model_features_8_1                   # final conv BN (unchanged)
+max_embedding_size: 8192
+match_dimensions: true
+stop: last # "best" or "last"
+subset: train # train, dev, test

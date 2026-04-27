@@ -1,0 +1,28 @@
+defaults:
+  - _aucurriculum_train_
+  - _self_
+
+results_dir: /nas/student/FilipAlexandrov/results
+experiment_id: default
+# 200 epochs: 200 * ceil(50000 / 128) = 200 * 391 = 78200 steps
+iterations: 78200
+save_frequency: 10
+
+hydra:
+  sweeper:
+    params:
+      +seed: 11
+      +batch_size: 128
+      +learning_rate: 0.1
+      dataset: CIFAR-100
+      augmentation: CIFAR100-aug
+      model: WideResNet-28-10
+      optimizer: SGD
+      scheduler: CosineAnnealingLR
+      curriculum: None
+      curriculum/sampling: None
+      curriculum/scoring: None
+      curriculum/pacing: None
+      curriculum.pacing.initial_size: 1
+      curriculum.pacing.final_iteration: 0
+      device: cuda

@@ -1,0 +1,5 @@
+id: SGD
+_target_: torch.optim.SGD
+momentum: 0.9
+weight_decay: 5.0e-4
+nesterov: true

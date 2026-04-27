@@ -1,0 +1,28 @@
+id: CIFAR-10
+_target_: cifar_10.CIFAR10
+
+dev_split: 0.0
+dev_split_seed: 0
+
+path: data/CIFAR10
+index_column: index
+target_column: label
+
+criterion: autrainer.criterions.BalancedCrossEntropyLoss
+metrics: 
+  - autrainer.metrics.Accuracy
+  - autrainer.metrics.UAR
+  - autrainer.metrics.F1
+tracking_metric: autrainer.metrics.Accuracy
+
+
+transform: 
+  type: image
+  base: 
+    - autrainer.transforms.Resize: 
+        height: 64
+        width: 64
+    - autrainer.transforms.ScaleRange
+    - autrainer.transforms.Normalize: 
+        mean: [0.485, 0.456, 0.406]
+        std: [0.229, 0.224, 0.225]

@@ -1,0 +1,6 @@
+id: FirstIteration
+type: FirstIteration
+_target_: aucurriculum.curricula.scoring.FirstIteration
+run_name: CIFAR-10_EfficientNet-B0_Adam_0.001_128_epoch_100_None_None_N_N_None_None_1_0_42
+stop: last # "best" or "last"
+subset: train # train, dev, test

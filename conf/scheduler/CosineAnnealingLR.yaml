@@ -1,0 +1,8 @@
+id: CosineAnnealingLR
+_target_: torch.optim.lr_scheduler.CosineAnnealingLR
+# T_max = number of evaluations = number of epochs (200)
+# Scheduler steps once per evaluation (= once per epoch)
+T_max: 200
+eta_min: 0.0
+
+step_frequency: evaluation

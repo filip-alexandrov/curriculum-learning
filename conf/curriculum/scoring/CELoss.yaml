@@ -1,0 +1,7 @@
+id: CELoss
+type: CELoss
+_target_: aucurriculum.curricula.scoring.CELoss
+run_name: CIFAR-10_EfficientNet-B0_Adam_0.001_128_epoch_100_None_None_N_N_None_None_1_0_42
+criterion: autrainer.criterions.CrossEntropyLoss
+stop: best # "best" or "last"
+subset: train # train, dev, test

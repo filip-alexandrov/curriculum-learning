@@ -1,0 +1,27 @@
+defaults:
+  - _aucurriculum_train_
+  - _self_
+
+results_dir: results
+experiment_id: default
+
+training_type: step
+eval_frequency: 1563 # every "epoch" -> 50 evals in total
+iterations: 78125 # 50 epochs * 50000 samples / 32 batch size
+
+hydra:
+  sweeper:
+    params:
+      +seed: 1
+      +batch_size: 32
+      +learning_rate: 0.001
+      dataset: CIFAR-10
+      model: EfficientNet-B0
+      optimizer: Adam
+      curriculum: Curriculum
+      curriculum/sampling: Balanced
+      curriculum/scoring: SharpnessScore
+      curriculum/pacing: Linear
+      curriculum.pacing.initial_size: 0.1
+      curriculum.pacing.final_iteration: 0.9
+      device: cuda

@@ -1,0 +1,10 @@
+id: SharpnessScore_5
+type: SharpnessScore_5
+_target_: sharpness_score.SharpnessScore
+stop: best # "best" or "last"
+subset: train # train, dev, test
+number_of_rand_directions: 50 # number of random direction iterations (seeds 1, 2, 3, ...)
+num_steps: 3 # number of steps along each direction (e.g., 11 = 5 negative, center, 5 positive)
+step_range: [-0.25, 0.25] # range of step values
+
+run_name: CIFAR-100_EfficientNet-B0_Adam_0.001_128_epoch_100_None_CIFAR100-aug_N_N_None_None_1_0_5 # has to be defined based on a finished run

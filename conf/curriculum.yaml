@@ -1,0 +1,14 @@
+defaults:
+  - _aucurriculum_score_
+  - _self_
+
+results_dir: /nas/student/FilipAlexandrov/results
+experiment_id: default
+device: cuda
+
+hydra:
+  sweeper:
+    params:
+      curriculum/scoring: SharpnessScore_superwide_8,SharpnessScore_superwide_16
+correlation:
+  correlation_matrix: all
