@@ -4,8 +4,7 @@ defaults:
 
 results_dir: /nas/student/FilipAlexandrov/results
 experiment_id: default
-# 200 epochs: 200 * ceil(50000 / 128) = 200 * 391 = 78200 steps
-iterations: 78200
+iterations: 200
 save_frequency: 10
 
 hydra:
