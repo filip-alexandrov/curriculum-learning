@@ -91,22 +91,29 @@ class SharpnessScoreIterative(AbstractScore):
         labels = np.array(labels, dtype=np.int64)
         num_samples = len(labels)
 
-        # Aggregate all 10 epochs * 6 directions = 60 sharpness lines.
+        # Discover all epoch_N folders that are multiples of 10 and have a checkpoint.
         all_pt_losses = []
 
-        target_epochs = list(range(10, 101, 10))
+        available_epochs = sorted([
+            int(d.split("_")[1])
+            for d in os.listdir(training_run_path)
+            if d.startswith("epoch_") and d.split("_")[1].isdigit()
+            and int(d.split("_")[1]) % 10 == 0
+            and os.path.exists(os.path.join(training_run_path, d, "model.pt"))
+        ])
+
+        if not available_epochs:
+            raise RuntimeError(
+                f"No epoch checkpoints (multiples of 10) found in {training_run_path}."
+            )
+
         epoch_pbar = tqdm(
-            target_epochs,
+            available_epochs,
             desc="Epoch checkpoints",
             disable=not config.get("progress_bar", False)
         )
         for epoch in epoch_pbar:
-            epoch_dir = os.path.join(training_run_path, f"epoch_{epoch}")
-            model_checkpoint = os.path.join(epoch_dir, "model.pt")
-            if not os.path.exists(model_checkpoint):
-                print(f"  Skipping epoch_{epoch}: checkpoint not found at {model_checkpoint}")
-                continue
-
+            model_checkpoint = os.path.join(training_run_path, f"epoch_{epoch}", "model.pt")
             self._load_epoch_checkpoint(model, model_checkpoint)
 
             epoch_output_path = os.path.join(run_path, f"epoch_{epoch}")
@@ -149,8 +156,7 @@ class SharpnessScoreIterative(AbstractScore):
             
         if not all_pt_losses:
             raise RuntimeError(
-                "No epoch checkpoints found in epoch_10..epoch_100. "
-                "Expected model.pt in each epoch_i directory."
+                f"No sharpness data collected. All checkpoints may have been skipped."
             )
         
         # Now aggregate all directions: average per-point losses across directions
