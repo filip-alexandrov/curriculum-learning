@@ -1,0 +1,8 @@
+id: SAM
+_target_: autrainer.optimizers.SAM
+base_optimizer: torch.optim.SGD
+rho: 0.05
+adaptive: false
+momentum: 0.9
+weight_decay: 5.0e-4
+nesterov: true
