@@ -16,7 +16,7 @@ hydra:
       dataset: CIFAR-100
       augmentation: CIFAR100-aug
       model: WideResNet-28-4
-      optimizer: SGD
+      optimizer: SAM
       scheduler: CosineAnnealingLR
       curriculum: None
       curriculum/sampling: None
