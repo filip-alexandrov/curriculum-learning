@@ -1,0 +1,14 @@
+id: OneCycleLR-Warmup
+_target_: torch.optim.lr_scheduler.OneCycleLR
+
+# Stepped once per epoch (step_frequency: evaluation), so 1 "step" = 1 epoch.
+# epochs must match `iterations` in the training config.
+max_lr: 0.01
+epochs: 200
+steps_per_epoch: 1
+pct_start: 0.05
+anneal_strategy: cos
+div_factor: 25.0
+final_div_factor: 1.0e4
+
+step_frequency: evaluation
