@@ -12,13 +12,15 @@ hydra:
     params:
       +seed: 11
       +batch_size: 128
-      +learning_rate: 0.001
+      +learning_rate: 0.01
       dataset: Difficulty-ImageNet
       augmentation: ImageNet-aug
       model: ResNet-50-T
       optimizer: SAM
       scheduler: OneCycleLR-Warmup
-      scheduler.max_lr: 0.001
+      scheduler.max_lr: 0.01
+      scheduler.pct_start: 0.02
+      scheduler.div_factor: 5.0
       curriculum: None
       curriculum/sampling: None
       curriculum/scoring: None
