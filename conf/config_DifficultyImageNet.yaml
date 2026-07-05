@@ -1,0 +1,27 @@
+defaults:
+  - _aucurriculum_train_
+  - _self_
+
+results_dir: /nas/student/FilipAlexandrov/results
+experiment_id: SAM_DifficultyImageNet
+iterations: 200
+save_frequency: 10
+
+hydra:
+  sweeper:
+    params:
+      +seed: 11
+      +batch_size: 128
+      +learning_rate: 0.1
+      dataset: Difficulty-ImageNet
+      augmentation: ImageNet-aug
+      model: ResNet-50
+      optimizer: SAM
+      scheduler: CosineAnnealingLR
+      curriculum: None
+      curriculum/sampling: None
+      curriculum/scoring: None
+      curriculum/pacing: None
+      curriculum.pacing.initial_size: 1
+      curriculum.pacing.final_iteration: 0
+      device: cuda

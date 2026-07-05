@@ -1,0 +1,21 @@
+id: Difficulty-ImageNet
+_target_: difficulty_imagenet.DifficultyImageNet
+
+path: data/Difficulty_ImageNet
+index_column: filename
+target_column: label
+
+criterion: torch.nn.CrossEntropyLoss
+metrics:
+  - autrainer.metrics.Accuracy
+  - autrainer.metrics.UAR
+  - autrainer.metrics.F1
+tracking_metric: autrainer.metrics.Accuracy
+
+transform:
+  type: image
+  base:
+    - autrainer.transforms.ScaleRange
+    - autrainer.transforms.Normalize:
+        mean: [0.485, 0.456, 0.406]
+        std: [0.229, 0.224, 0.225]

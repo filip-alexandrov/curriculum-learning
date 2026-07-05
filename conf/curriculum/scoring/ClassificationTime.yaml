@@ -1,0 +1,6 @@
+id: ClassificationTime
+type: ClassificationTime
+_target_: classification_time_score.ClassificationTimeScore
+dataset: Difficulty-ImageNet
+threshold: 0.5
+subset: train
