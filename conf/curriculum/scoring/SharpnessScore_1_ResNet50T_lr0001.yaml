@@ -1,0 +1,11 @@
+id: SharpnessScore_1_ResNet50T_lr0001
+type: SharpnessScore_1_ResNet50T_lr0001
+_target_: sharpness_score.SharpnessScore
+stop: best # "best" or "last"
+subset: train # train, dev, test
+number_of_rand_directions: 50 # number of random direction iterations (seeds 1, 2, 3, ...)
+num_steps: 3 # number of steps along each direction (e.g., 11 = 5 negative, center, 5 positive)
+step_range: [-0.25, 0.25] # range of step values
+
+# Difficulty-ImageNet, ResNet-50-T (pretrained), SAM lr=0.001 - experiment_id: SAM_DifficultyImageNet_Pretrained
+run_name: Difficulty-ImageNet_ResNet-50-T_SAM_0.001_128_epoch_200_OneCycleLR-Warmup_ImageNet-aug_N_N_None_None_1_0_11

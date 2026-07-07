@@ -1,0 +1,12 @@
+id: GradientSharpnessScore_1
+type: GradientSharpnessScore_1
+_target_: gradient_sharpness_score.GradientSharpnessScore
+stop: best # "best" or "last"
+subset: train # train, dev, test
+k: 0.25 # perturbation radius (box side, r = k), ascent-only
+num_steps: 3 # max number of greedy gradient-ascent steps (step size = k / num_steps)
+batch_size: 16 # scoring batch size; kept small since each sample needs its own param copy
+num_workers: 4
+
+# Same baseline run as SharpnessScore_1.yaml, for a like-for-like comparison
+run_name: CIFAR-100_EfficientNet-B0_Adam_0.001_128_epoch_100_None_CIFAR100-aug_N_N_None_None_1_0_1 # has to be defined based on a finished run
