@@ -22,7 +22,7 @@ hydra:
       scheduler: CosineAnnealingLR
       curriculum: Curriculum
       curriculum/sampling: Balanced
-      curriculum/scoring: SharpnessScore_wide_1
+      curriculum/scoring: GradientSharpnessScore_1
       curriculum/pacing: Linear
       curriculum.pacing.initial_size: 0.1
       curriculum.pacing.final_iteration: 0.9

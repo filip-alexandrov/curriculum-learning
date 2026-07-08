@@ -21,15 +21,26 @@ class GradientSharpnessScore(AbstractScore):
     `epsilon(w) = k * grad(L)(w) / ||grad(L)(w)||_2`.
 
     Unlike `SharpnessScore` (which probes shared random directions), each
-    sample follows its own loss gradient: at every step the ascent
-    direction is recomputed from that sample's own gradient at its current
-    position, globally L2-normalized (across all non-bias/BatchNorm
-    parameters) and scaled to a fixed step size of `k / num_steps`. A
-    sample stops as soon as a step fails to increase its loss, or after
-    `num_steps` steps (i.e. at the ball's edge `k`), whichever comes
-    first. The score is the relative loss increase between the ascent
-    endpoint and the original (center) loss, matching the normalization
-    used by `SharpnessScore`.
+    sample follows its own loss gradient via backtracking line search: at
+    every step the ascent direction is recomputed from that sample's own
+    gradient at its current position, globally L2-normalized (across all
+    non-bias/BatchNorm parameters), and scaled by a per-sample step size
+    that starts at `initial_step_size`. If a step increases the loss (by
+    more than `tol`), it is accepted: the sample moves there and the step
+    size is kept unchanged for the next step. If it does not, the step is
+    rejected (the sample does not move) and the step size is multiplied by
+    `decay_factor` before retrying from the same position -- i.e. the step
+    size only ever shrinks, never regrows, so the walk automatically
+    refines its resolution once it is close to a local peak instead of
+    repeatedly overshooting it. A sample stops once its accepted steps have
+    covered the full radius `k` (the edge of the ball), or once its step
+    size has decayed below `min_step_size` (further refinement would be
+    negligible), or after `max_steps` iterations (a safety cap). Each
+    accepted step is clipped so that cumulative distance never exceeds `k`,
+    preserving the `r = k` bound exactly. The score is the relative
+    increase between the (running) peak loss reached along the trajectory
+    and the original (center) loss, matching the normalization used by
+    `SharpnessScore`.
 
     Note this deliberately normalizes *globally* rather than per-filter
     (as `SharpnessScore` does for its random directions): a per-sample
@@ -57,7 +68,11 @@ class GradientSharpnessScore(AbstractScore):
         stop: str = "best",
         subset: str = "train",
         k: float = 0.25,
-        num_steps: int = 3,
+        initial_step_size: float = 0.0625,
+        decay_factor: float = 0.5,
+        min_step_size: float = 0.00025,
+        max_steps: int = 40,
+        tol: float = 1e-3,
         batch_size: int = 16,
         num_workers: int = 4,
         ignore_biasbn: bool = True,
@@ -72,7 +87,11 @@ class GradientSharpnessScore(AbstractScore):
             reverse_score=False,  # higher sharpness -> harder
         )
         self.k = k
-        self.num_steps = num_steps
+        self.initial_step_size = initial_step_size
+        self.decay_factor = decay_factor
+        self.min_step_size = min_step_size
+        self.max_steps = max_steps
+        self.tol = tol
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.ignore_biasbn = ignore_biasbn
@@ -106,7 +125,6 @@ class GradientSharpnessScore(AbstractScore):
             n: p.dim() > 1 or not self.ignore_biasbn
             for n, p in base_params.items()
         }
-        step_size = self.k / self.num_steps
 
         def sample_loss(
             params: Dict[str, torch.Tensor],
@@ -121,7 +139,8 @@ class GradientSharpnessScore(AbstractScore):
         loss_fn = vmap(sample_loss, in_dims=(0, None, 0, 0))
 
         show_progress = config.get("progress_bar", False)
-        all_scores, all_labels, all_steps_taken = [], [], []
+        all_scores, all_labels = [], []
+        all_steps_taken, all_accepted_steps, all_distance_traveled = [], [], []
 
         for x, y, _ in tqdm(
             loader,
@@ -139,11 +158,16 @@ class GradientSharpnessScore(AbstractScore):
 
             with torch.no_grad():
                 loss_center = loss_fn(current_params, base_buffers, x, y)
-            current_loss = loss_center.clone()
+            peak_loss = loss_center.clone()
+            step_size = torch.full(
+                (bsz,), self.initial_step_size, device=device
+            )
+            distance_traveled = torch.zeros(bsz, device=device)
             active = torch.ones(bsz, dtype=torch.bool, device=device)
             steps_taken = torch.zeros(bsz, dtype=torch.long, device=device)
+            accepted_steps = torch.zeros(bsz, dtype=torch.long, device=device)
 
-            for _ in range(self.num_steps):
+            for _ in range(self.max_steps):
                 if not bool(active.any()):
                     break
 
@@ -151,8 +175,15 @@ class GradientSharpnessScore(AbstractScore):
                 directions = self._normalize_direction_global(
                     grads, perturbable
                 )
+                # Clip so an accepted step can never overshoot the k-ball.
+                remaining = (self.k - distance_traveled).clamp(min=0.0)
+                effective_step = torch.minimum(step_size, remaining)
                 candidate_params = {
-                    name: current_params[name] + step_size * directions[name]
+                    name: current_params[name]
+                    + effective_step.view(
+                        bsz, *([1] * (current_params[name].dim() - 1))
+                    )
+                    * directions[name]
                     for name in current_params
                 }
 
@@ -161,31 +192,50 @@ class GradientSharpnessScore(AbstractScore):
                         candidate_params, base_buffers, x, y
                     )
 
-                improved = active & (candidate_loss > current_loss)
+                accepted = active & (candidate_loss > peak_loss + self.tol)
                 for name in current_params:
-                    param_mask = improved.view(
+                    param_mask = accepted.view(
                         bsz, *([1] * (current_params[name].dim() - 1))
                     )
                     current_params[name] = torch.where(
                         param_mask, candidate_params[name], current_params[name]
                     )
-                current_loss = torch.where(improved, candidate_loss, current_loss)
-                steps_taken += improved.long()
-                active = improved
 
-            scores = (
-                (current_loss - loss_center) / (1 + loss_center) * 100.0
-            )
+                peak_loss = torch.where(accepted, candidate_loss, peak_loss)
+                distance_traveled = torch.where(
+                    accepted, distance_traveled + effective_step, distance_traveled
+                )
+                accepted_steps += accepted.long()
+                # Shrink on rejection; keep unchanged (never regrow) on
+                # acceptance -- a monotonic step-size ratchet.
+                step_size = torch.where(
+                    accepted, step_size, step_size * self.decay_factor
+                )
+                steps_taken += active.long()
+
+                reached_boundary = distance_traveled >= self.k - 1e-12
+                step_negligible = step_size < self.min_step_size
+                active = active & ~reached_boundary & ~step_negligible
+
+            scores = (peak_loss - loss_center) / (1 + loss_center) * 100.0
             all_scores.append(scores.detach().cpu().numpy())
             all_labels.append(y.detach().cpu().numpy())
             all_steps_taken.append(steps_taken.detach().cpu().numpy())
+            all_accepted_steps.append(accepted_steps.detach().cpu().numpy())
+            all_distance_traveled.append(
+                (distance_traveled / self.k).detach().cpu().numpy()
+            )
 
         scores = np.concatenate(all_scores).astype(np.float32)
         labels = np.concatenate(all_labels).astype(np.int64)
         steps_taken = np.concatenate(all_steps_taken)
+        accepted_steps = np.concatenate(all_accepted_steps)
+        distance_traveled = np.concatenate(all_distance_traveled)
 
         df = self.create_dataframe(scores, labels, data)
-        df["ascent_steps_taken"] = steps_taken
+        df["steps_taken"] = steps_taken
+        df["accepted_steps"] = accepted_steps
+        df["distance_traveled_frac"] = distance_traveled
         self.save_scores(df, run_path)
 
     @staticmethod

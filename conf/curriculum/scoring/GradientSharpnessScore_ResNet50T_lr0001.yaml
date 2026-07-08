@@ -1,0 +1,18 @@
+id: GradientSharpnessScore_ResNet50T_lr0001
+type: GradientSharpnessScore_ResNet50T_lr0001
+_target_: gradient_sharpness_score.GradientSharpnessScore
+stop: best # "best" or "last"
+subset: train # train, dev, test
+k: 0.25 # perturbation radius (ball of radius k, r = k), ascent-only; matches GradientSharpnessScore_1
+initial_step_size: 0.0625 # k / 4; starting step length for the backtracking line search
+decay_factor: 0.5 # multiply step size by this on a rejected (non-improving) step; never regrows
+min_step_size: 0.00025 # k / 1000; stop once step size decays below this (further refinement negligible)
+max_steps: 40 # hard safety cap on total iterations (accepted + rejected), not the primary stopping rule
+tol: 0.001 # minimum absolute loss increase over the running peak to accept a step
+batch_size: 4 # ResNet-50 has ~23.6M params (~4.5x EfficientNet-B0) and likely larger (e.g. 224x224) inputs than CIFAR-100;
+              # kept small since each sample needs its own parameter copy (memory ~ batch_size x parameter_count).
+              # Reduce further (e.g. to 2) if this OOMs.
+num_workers: 4
+
+# Difficulty-ImageNet, ResNet-50-T (pretrained, transfer learning), SAM lr=0.001 - experiment_id: SAM_DifficultyImageNet_Pretrained
+run_name: Difficulty-ImageNet_ResNet-50-T_SAM_0.001_128_epoch_200_OneCycleLR-Warmup_ImageNet-aug_N_N_None_None_1_0_11

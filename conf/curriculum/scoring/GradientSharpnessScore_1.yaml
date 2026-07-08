@@ -3,8 +3,12 @@ type: GradientSharpnessScore_1
 _target_: gradient_sharpness_score.GradientSharpnessScore
 stop: best # "best" or "last"
 subset: train # train, dev, test
-k: 0.25 # perturbation radius (box side, r = k), ascent-only
-num_steps: 3 # max number of greedy gradient-ascent steps (step size = k / num_steps)
+k: 0.25 # perturbation radius (ball of radius k, r = k), ascent-only
+initial_step_size: 0.0625 # k / 4; starting step length for the backtracking line search
+decay_factor: 0.5 # multiply step size by this on a rejected (non-improving) step; never regrows
+min_step_size: 0.00025 # k / 1000; stop once step size decays below this (further refinement negligible)
+max_steps: 40 # hard safety cap on total iterations (accepted + rejected), not the primary stopping rule
+tol: 0.001 # minimum absolute loss increase over the running peak to accept a step
 batch_size: 16 # scoring batch size; kept small since each sample needs its own param copy
 num_workers: 4
 
