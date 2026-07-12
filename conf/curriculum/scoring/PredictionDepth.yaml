@@ -1,14 +1,16 @@
 id: PredictionDepth
 type: PredictionDepth
 _target_: aucurriculum.curricula.scoring.PredictionDepth
-run_name: CIFAR-10_EfficientNet-B0_Adam_0.001_128_epoch_100_None_None_N_N_None_None_1_0_42
+run_name: CIFAR-100_WideResNet-28-4_SAM_0.1_128_epoch_200_CosineAnnealingLR_CIFAR100-aug_N_N_None_None_1_0_11
+# Probe placements for WideResNet-28-4 (verified via torch.fx.symbolic_trace on
+# cluster_project/wide_resnet.py: WideResNet(output_dim=100, depth=28, widen_factor=4)).
+# Architecture is conv0 -> group1/group2/group3 (4 pre-activation blocks each,
+# stride-2 at the first block of group2/group3) -> bn_final -> pool -> fc.
 probe_placements:
-  - model_features_0_1                   # stem BN (unchanged)
-  - model_features_1_0_block_2_1         # stage 1 projection BN (unchanged)
-  - model_features_\d_0_block_3_1        # stride block projection BN, stages 2–7 (unchanged)
-  - model_features_\d_\d+_block_3_1      # NEW: repeated block projection BN (2.1, 4.1, 4.2, 5.1–5.2, 6.1–6.3, 7.0 excluded as it has no repeat)
-  - add(_\d+)?                           # residual additions (unchanged)
-  - model_features_8_1                   # final conv BN (unchanged)
+  - conv0                     # stem conv
+  - group\d_blocks_0_shortcut # downsampling/channel-projection shortcuts (one per group)
+  - add(_\d+)?                # residual additions, one per block (12 total)
+  - bn_final                  # final BN before global average pooling
 max_embedding_size: 8192
 match_dimensions: true
 stop: last # "best" or "last"

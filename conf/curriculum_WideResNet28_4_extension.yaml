@@ -1,0 +1,22 @@
+defaults:
+  - _aucurriculum_score_
+  - _self_
+
+results_dir: /nas/student/FilipAlexandrov/results
+experiment_id: default
+device: cuda
+
+# Precomputes CELoss, CumulativeAccuracy, FirstIteration, PredictionDepth, and
+# ProbabilityScore curriculum orderings against the WideResNet-28-4/SAM/CIFAR-100
+# baseline run (CIFAR-100_WideResNet-28-4_SAM_0.1_128_epoch_200_CosineAnnealingLR_
+# CIFAR100-aug_N_N_None_None_1_0_11), for later use with curriculum_training_*.yaml.
+# Run once before the corresponding `aucurriculum train -cn curriculum_training_*`
+# jobs. ClassificationTime is intentionally excluded: it requires human
+# Minimum-Viewing-Time judgements (human_responses.csv) that only exist for
+# Difficulty-ImageNet, not CIFAR-100.
+hydra:
+  sweeper:
+    params:
+      curriculum/scoring: CELoss,CumulativeAccuracy,FirstIteration,PredictionDepth,ProbabilityScore
+correlation:
+  correlation_matrix: all
