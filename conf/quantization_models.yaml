@@ -1,0 +1,62 @@
+# Models to evaluate under weight quantization, matching Table 5.1 exactly
+# (Gradient Sharpness Score excluded per instruction). Each entry's
+# `run_name` must match a completed run under
+# ${results_dir}/${experiment_id}/training/<run_name>/_best/model.pt.
+#
+# curriculum/k columns mirror Table 5.1's own columns so results can be
+# rendered back into an identically-shaped table per bit-width.
+
+results_dir: /nas/student/FilipAlexandrov/results
+experiment_id: default
+
+models:
+  # --- Standard training (no curriculum) ---
+  - curriculum: "WideResNet-28-4 (SGD)"
+    k: null
+    run_name: CIFAR-100_WideResNet-28-4_SGD_0.1_128_epoch_200_CosineAnnealingLR_CIFAR100-aug_N_N_None_None_1_0_11
+
+  - curriculum: "WideResNet-28-10 (SGD)"
+    k: null
+    run_name: CIFAR-100_WideResNet-28-10_SGD_0.1_128_epoch_200_CosineAnnealingLR_CIFAR100-aug_N_N_None_None_1_0_11
+
+  - curriculum: "WideResNet-28-4 (SAM)"
+    k: null
+    run_name: CIFAR-100_WideResNet-28-4_SAM_0.1_128_epoch_200_CosineAnnealingLR_CIFAR100-aug_N_N_None_None_1_0_11
+
+  # --- Curriculum learning (WideResNet-28-4) ---
+  - curriculum: "Random Curriculum"
+    k: null
+    run_name: CIFAR-100_WideResNet-28-4_SAM_0.1_128_step_78200_CosineAnnealingLR_CIFAR100-aug_C_B_Random_Linear_0.1_0.9_11
+
+  - curriculum: "Sharpness Score"
+    k: 0.001
+    run_name: CIFAR-100_WideResNet-28-4_SAM_0.1_128_step_78200_CosineAnnealingLR_CIFAR100-aug_C_B_SharpnessScore_0_001_tight_Linear_0.1_0.9_11
+
+  - curriculum: "Sharpness Score"
+    k: 0.01
+    run_name: CIFAR-100_WideResNet-28-4_SAM_0.1_128_step_78200_CosineAnnealingLR_CIFAR100-aug_C_B_SharpnessScore_0_01_tight_Linear_0.1_0.9_11
+
+  - curriculum: "Sharpness Score"
+    k: 0.05
+    run_name: CIFAR-100_WideResNet-28-4_SAM_0.1_128_step_78200_CosineAnnealingLR_CIFAR100-aug_C_B_SharpnessScore_0_05_tight_Linear_0.1_0.9_11
+
+  - curriculum: "Sharpness Score"
+    k: 0.1
+    run_name: CIFAR-100_WideResNet-28-4_SAM_0.1_128_step_78200_CosineAnnealingLR_CIFAR100-aug_C_B_SharpnessScore_0_1_tight_Linear_0.1_0.9_11
+
+  - curriculum: "Sharpness Score"
+    k: 0.25
+    run_name: CIFAR-100_WideResNet-28-4_SAM_0.1_128_step_78200_CosineAnnealingLR_CIFAR100-aug_C_B_SharpnessScore_1_Linear_0.1_0.9_11
+
+  - curriculum: "Sharpness Score"
+    k: 1.0
+    run_name: CIFAR-100_WideResNet-28-4_SAM_0.1_128_step_78200_CosineAnnealingLR_CIFAR100-aug_C_B_SharpnessScore_1_wide_Linear_0.1_0.9_11
+
+# Bit-widths to sweep ("quantization powers"): 32 = unquantized fp32
+# baseline (reproduces the original Table 5.1 numbers as a sanity check),
+# then progressively more aggressive quantization.
+bits: [32, 8, 6, 4, 3, 2]
+
+# Quantization scheme (see quantization.py docstring for full rationale).
+per_channel: true
+keep_first_last_fp32: false
